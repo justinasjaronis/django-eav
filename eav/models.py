@@ -79,6 +79,7 @@ class EnumValue(models.Model):
     '''
     value = models.CharField(_(u"value"), db_index=True,
                              unique=True, max_length=50)
+    icon = models.ImageField(upload_to='enumvalue_icons/',blank=True,null=True, max_length=300, verbose_name=_('Icon'))
 
     def __unicode__(self):
         return self.value
@@ -152,7 +153,7 @@ class Attribute(models.Model):
     '''
 
     class Meta:
-        ordering = ['name']
+        ordering = ['position', 'name']
         unique_together = ('site', 'slug')
 
     TYPE_TEXT = 'text'
@@ -188,6 +189,8 @@ class Attribute(models.Model):
 
     enum_group = models.ForeignKey(EnumGroup, verbose_name=_(u"choice group"),
                                    blank=True, null=True)
+
+    position = models.IntegerField(default=0, null=False, blank=False)
 
     type = models.CharField(_(u"type"), max_length=20, blank=True, null=True)
 
