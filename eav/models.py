@@ -401,7 +401,7 @@ class Value(models.Model):
         '''
         if html and  self.attribute.datatype == Attribute.TYPE_ENUM and self.value_enum.icon:
             return '<img src="%s" alt="%s" class="enum-icon" />' % (self.value_enum.get_absolute_icon_url(),  self.value_enum.value)
-        if pdf and  self.attribute.datatype == Attribute.TYPE_ENUM and self.value_enum.icon:
+        if pdf and  self.attribute.datatype == Attribute.TYPE_ENUM and self.value_enum.icon_pdf:
             return '<img src="%s" alt="%s" class="enum-icon" />' % (self.value_enum.get_absolute_icon_path(),  self.value_enum.value)
         return getattr(self, 'value_%s' % self.attribute.datatype)
 
