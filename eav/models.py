@@ -44,6 +44,8 @@ from django.contrib.sites.models import Site
 from django.contrib.sites.managers import CurrentSiteManager
 from django.conf import settings
 
+
+
 from .validators import *
 from .fields import EavSlugField, EavDatatypeField
 
@@ -80,6 +82,13 @@ class EnumValue(models.Model):
     value = models.CharField(_(u"value"), db_index=True,
                              unique=True, max_length=50)
     icon = models.ImageField(upload_to='enumvalue_icons/',blank=True,null=True, max_length=300, verbose_name=_('Icon'))
+    icon_pdf = models.ImageField(upload_to='enumvalue_icons_pdf/',blank=True,null=True, max_length=300, verbose_name=_('Icon'))
+    
+    def get_absolute_icon_url(self):
+        return self.icon.url
+
+    def get_absolute_icon_path(self):
+        return "{0}{1}".format(settings.PROJECT_PATH, self.icon_pdf.url)
 
     def __unicode__(self):
         return self.value
@@ -207,6 +216,9 @@ class Attribute(models.Model):
     modified = models.DateTimeField(_(u"modified"), auto_now=True)
 
     required = models.BooleanField(_(u"required"), default=False)
+
+    value_suffix = models.CharField(max_length=10, verbose_name=_('Suffix of attribute (L, mm, etc)'), default='', blank=True)
+
 
     objects = models.Manager()
     on_site = CurrentSiteManager()
@@ -383,10 +395,14 @@ class Value(models.Model):
                                         {'choice': self.value_enum,
                                          'attribute': self.attribute})
 
-    def _get_value(self):
+    def _get_value(self, html=False, pdf=False):
         '''
         Return the python object this value is holding
         '''
+        if html and  self.attribute.datatype == Attribute.TYPE_ENUM and self.value_enum.icon:
+            return '<img src="%s" alt="%s" class="enum-icon" />' % (self.value_enum.get_absolute_icon_url(),  self.value_enum.value)
+        if pdf and  self.attribute.datatype == Attribute.TYPE_ENUM and self.value_enum.icon:
+            return '<img src="%s" alt="%s" class="enum-icon" />' % (self.value_enum.get_absolute_icon_path(),  self.value_enum.value)
         return getattr(self, 'value_%s' % self.attribute.datatype)
 
     def _set_value(self, new_value):
@@ -505,6 +521,23 @@ class Entity(object):
             values_dict[value.attribute.slug] = value.value
 
         return values_dict
+
+    def get_html_values_dict(self):
+        values_dict = dict()
+        
+        for value in self.get_values():
+            suffix = value.attribute.value_suffix and value.attribute.value_suffix or ''
+            values_dict[value.attribute.slug] = unicode(value._get_value(html=True))+suffix
+
+        return values_dict    
+
+    def get_pdf_values_dict(self):
+        values_dict = dict()
+        for value in self.get_values():
+            suffix = value.attribute.value_suffix and value.attribute.value_suffix or ''
+            values_dict[value.attribute.slug] = unicode(value._get_value(pdf=True))+suffix
+
+        return values_dict    
 
     def get_values(self):
         '''
